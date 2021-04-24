@@ -12,6 +12,8 @@ const PORT = process.env.PORT || 3001;
 
 app.get('/recipes', getRecipes);
 
+const inMemoryDB = {};
+
 function getRecipes(request, response) {
   const ingredient = request.query.ingredient;
   const url = `https://api.edamam.com/search`;
