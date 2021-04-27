@@ -1,47 +1,69 @@
 'use strict';
 
-require('dotenv').config();
+//============Application Dependencies=============
 const express = require('express');
-const app = express();
 const cors = require('cors');
+const { request } = require('express');
+require('dotenv').config();
+const PORT = process.env.PORT || 3001;
+
+
+const app = express();
+
 app.use(cors());
 
-const PORT = 3001;
-
-const mongoose = require('mongoose');
-// making a database called cats
-mongoose.connect('mongodb://localhost:27017/cats', {useNewUrlParser: true, useUnifiedTopology: true});
-
-const db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', function() {
-  console.log('Mongoose is connected')
+//============Application Routes=============
+app.get('/ping', (request, response) => {
+  try {
+    response.status(200).send('pong');
+  } catch(error) {
+    console.error(error);
+    response.status(404).send(error);
+  }
 });
 
-const CatParent = require('./models/Users');
+const mongoose = require('mongoose'); // get mongoose
+mongoose.connect('mongodb://localhost:27017/cats', {useNewUrlParser: true, useUnifiedTopology: true});
 
-const bob = new CatParent({ name: 'bobmister', cats: [{name:'fluffy'}, {name:'joe'}]});
-console.log({bob})
-bob.save();
+// const Cat = mongoose.model('Cat', {name: String});
 
-const sue = new CatParent({ name: 'sue', cats: [{name:'goose'}, {name:'malaki'}, {name:'sam'}]});
-sue.save();
+// const kitty = new Cat({name: 'Zildijan'});
+// kitty.save().then(() => console.log('Meow'));
 
-app.get('/cats', getAllCats)
+//store value of mongoose connection
+const db = mongoose.connection;
 
-function getAllCats(request, response) {
-  const name = request.query.name;
-  console.log({name});
-  CatParent.find({name}, (err, person) => {
-    if(err) return console.error(err);
-    console.log({person})
-    response.send(person[0].cats);
-  })
-}
+//expects an event
+db.on('error', console.error.bind(console, 'connection error:'));
+
+//once is a kind of on that only runs once
+db.once('open', function () {
+  console.log('mongoose is connected')
+});
+
+//get reference to schema
+// new objects expect a key and a type of data
+const kittySchema = new mongoose.Schema({
+  name: String
+});
+
+//what is mongoose.model? It's a class that creates a document repersenting a kitten here.
+//expects a string and a schema
+const Kitten = mongoose.model('Kitten', kittySchema);
+
+const silence = new Kitten({name: 'silence'});
+silence.save();
+
+app.get('/kitties', (request, response) => {
+  const catName = request.query.catName;
+  console.log(catName);
+
+  Kitten.find({ catName }, (err, Kitten) => {
+    if (err) return console.error(err);
+    console.log(Kitten);
+    response.send(Kitten);
+  });
+
+});
 
 app.listen(PORT, () => console.log(`listening on ${PORT}`));
-
-// terminal commands:
-// mongo - enters mongo
-// show dbs - shows all collections
-// use <db> - switches to the collection you want to be in
